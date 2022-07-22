@@ -1,0 +1,13 @@
+[package]
+name = "logger"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A rust logging library."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+colored = "2.0.0"
+time = "0.3.11"
+chrono = "0.4.19"
