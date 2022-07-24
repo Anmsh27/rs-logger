@@ -28,6 +28,7 @@ pub enum LoggingLevel {
 /// logger.set_level(LoggingLevel::LevelThree);
 /// 
 /// logger.info("It works!");
+/// logger.debug("%D %T Date and time according to utc");
 /// ```
 
 #[derive(Debug)]
