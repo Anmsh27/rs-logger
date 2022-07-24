@@ -132,8 +132,8 @@ impl Logger {
             .format("%H:%M:%S")
             .to_string();
 
-        formatters.insert("%T".to_string(), time);
-        formatters.insert("%D".to_string(), date_string);
+        formatters.insert("%T".to_string(), String::from(&time));
+        formatters.insert("%D".to_string(), String::from(&date_string));
 
         for formatter in &formatters {
             if msg.find(formatter.0).is_some() {
@@ -144,7 +144,9 @@ impl Logger {
         let formatted = format!("CRITICAL: {}", msg);
         println!("{}", &formatted.on_red().red());
 
-        let file_formatted = format!("CRITICAL: {}\n",
+        let file_formatted = format!("{} {} CRITICAL: {}\n",
+            date_string,
+            time,
             msg
         );
 
@@ -169,24 +171,23 @@ impl Logger {
             .format("%H:%M:%S")
             .to_string();
 
-        formatters.insert("%T".to_string(), time);
-        formatters.insert("%D".to_string(), date_string);
+        formatters.insert("%T".to_string(), String::from(&time));
+        formatters.insert("%D".to_string(), String::from(&date_string));
 
-        let formatted = format!("ERROR: '{}'", msg);
+        for formatter in &formatters {
+            if msg.find(formatter.0).is_some() {
+                msg = msg.replace(formatter.0, formatter.1);
+            }
+        }
+
+        let formatted = format!("ERROR: {}", msg);
         match self.level {
             LevelOne | LevelTwo |
             LevelThree | LevelFour => println!("{}", &formatted.bright_red()),
             _ => {}
         }
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
-
-        let file_formatted = format!("{} {} ERROR: '{}'\n",
+        let file_formatted = format!("{} {} ERROR: {}\n",
             date_string,
             time,
             msg
@@ -213,8 +214,14 @@ impl Logger {
             .format("%H:%M:%S")
             .to_string();
 
-        formatters.insert("%T".to_string(), time);
-        formatters.insert("%D".to_string(), date_string);
+        formatters.insert("%T".to_string(), String::from(&time));
+        formatters.insert("%D".to_string(), String::from(&date_string));
+
+        for formatter in &formatters {
+            if msg.find(formatter.0).is_some() {
+                msg = msg.replace(formatter.0, formatter.1);
+            }
+        }
 
         let formatted = format!("INFO: {}", msg);
         match self.level {
@@ -224,14 +231,8 @@ impl Logger {
             _ => {}
         };
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
 
-        let file_formatted = format!("{} {} INFO: '{}'\n",
+        let file_formatted = format!("{} {} INFO: {}\n",
             date_string,
             time,
             msg
@@ -252,16 +253,21 @@ impl Logger {
 
         let date = chrono::Utc::now().date();
         let date_string = date.to_string().replace("UTC", "");
-
         let time = chrono::Utc::now()
             .time()
             .format("%H:%M:%S")
             .to_string();
 
-        formatters.insert("%T".to_string(), time);
-        formatters.insert("%D".to_string(), date_string);
+        formatters.insert("%T".to_string(), String::from(&time));
+        formatters.insert("%D".to_string(), String::from(&date_string));
 
-        let formatted = format!("WARNING: '{}'", msg);
+        for formatter in &formatters {
+            if msg.find(formatter.0).is_some() {
+                msg = msg.replace(formatter.0, formatter.1);
+            }
+        }
+
+        let formatted = format!("WARNING: {}", msg);
         match self.level {
             LevelOne | LevelTwo | LevelThree => {
                 println!("{}", &formatted.bright_yellow());
@@ -269,14 +275,7 @@ impl Logger {
             _ => {}
         };
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
-
-        let file_formatted = format!("{} {} WARNING: '{}'\n",
+        let file_formatted = format!("{} {} WARNING: {}\n",
             date_string,
             time,
             msg
@@ -291,7 +290,25 @@ impl Logger {
     {
         use LoggingLevel::*;
 
-        let msg = msg.into();
+        let mut msg = msg.into();
+
+        let mut formatters: HashMap<String, String> = HashMap::new();
+
+        let date = chrono::Utc::now().date();
+        let date_string = date.to_string().replace("UTC", "");
+        let time = chrono::Utc::now()
+            .time()
+            .format("%H:%M:%S")
+            .to_string();
+
+        formatters.insert("%T".to_string(), String::from(&time));
+        formatters.insert("%D".to_string(), String::from(&date_string));
+
+        for formatter in &formatters {
+            if msg.find(formatter.0).is_some() {
+                msg = msg.replace(formatter.0, formatter.1);
+            }
+        }
 
         let formatted = format!("DEBUG: {}", msg);
         match self.level {
@@ -301,14 +318,7 @@ impl Logger {
             _ => {}
         };
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
-
-        let file_formatted = format!("{} {} DEBUG: '{}'\n",
+        let file_formatted = format!("{} {} DEBUG: {}\n",
             date_string,
             time,
             msg
@@ -321,7 +331,8 @@ impl Logger {
 fn write_file<T: Into<String>>(file: &mut fs::File, msg: T) -> Result<(), String> {
     let msg: String = msg.into();
 
-    match file.write_all(&mut msg.as_bytes()) {
+
+    match file.write(&mut msg.as_bytes()) {
         Ok(i) => i,
         Err(error) => return Err(error.to_string())
     };
@@ -333,6 +344,7 @@ fn open<T: Into<String>>(filename: T) -> Result<fs::File, String> {
     let filename = filename.into();
     let file = match fs::OpenOptions::new()
         .write(true)
+        .truncate(true)
         .open(&filename) {
             Ok(i) => i,
             Err(error) => {

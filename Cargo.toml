@@ -1,10 +1,10 @@
 [package]
 name = "rs-logger"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 license-file = "LICENSE"
 description = "A rust logging library."
-documentation = "https://docs.rs/rs-logger/0.1.4/rs_logger/"
+documentation = "https://docs.rs/rs-logger/latest/rs_logger/index.html"
 repository = "https://github.com/Anmsh27/rs-logger"
 readme = "README.md"
 license = "MIT"
