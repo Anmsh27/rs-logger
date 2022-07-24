@@ -6,11 +6,17 @@ use chrono;
 use std::collections::HashMap;
 
 /// LoggingLevel enum
+/// 
 /// 1 is for logging everything
+/// 
 /// 2 is for everything except debug
+/// 
 /// 3 is for everything except debug + info
+/// 
 /// 4 is for logging nothing except error + critical
+/// 
 /// 5 is for logging nothing except critical
+/// 
 #[derive(Debug)]
 pub enum LoggingLevel {
     LevelOne, // everything
@@ -39,7 +45,7 @@ pub struct Logger {
 
 impl Default for Logger {
     fn default() -> Self {
-        let filename = String::from("logger.log");
+        let filename = String::from("logs.log");
         let file = open(&filename).unwrap_or_else(|error| {
             println!("{}", format!("Logger Error: {}", error.to_string()).red());
             panic!("");
