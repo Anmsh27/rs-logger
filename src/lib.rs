@@ -3,18 +3,21 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use chrono;
+use std::collections::HashMap;
 
 /// LoggingLevel enum
 /// 1 is for logging everything
 /// 2 is for everything except debug
-/// 3 is for everything excpet debug + info
-/// 4 is for everything only errors
+/// 3 is for everything except debug + info
+/// 4 is for logging nothing except error + critical
+/// 5 is for logging nothing except critical
 #[derive(Debug)]
 pub enum LoggingLevel {
     LevelOne, // everything
     LevelTwo, // no debug
     LevelThree, // no info
     LevelFour, // no warning
+    LevelFive, // no error
 }
 
 /// Logger
@@ -30,7 +33,7 @@ pub enum LoggingLevel {
 #[derive(Debug)]
 pub struct Logger {
     file: fs::File,
-    level: LoggingLevel
+    level: LoggingLevel,
 }
 
 impl Default for Logger {
@@ -42,12 +45,13 @@ impl Default for Logger {
         });
         Self {
             file,
-            level: LoggingLevel::LevelOne
+            level: LoggingLevel::LevelOne,
         }
     }
 }
 
 impl Logger {
+
     pub fn new<T>(filename: T, level: LoggingLevel) -> Result<Self, String>
     where
         T: Into<String>
@@ -67,6 +71,9 @@ impl Logger {
             },
             LevelFour => {
                 logging_level = LevelFour;
+            },
+            LevelFive => {
+                logging_level = LevelFive;
             }
         }
 
@@ -94,18 +101,76 @@ impl Logger {
             },
             LevelFour => {
                 self.level = LevelFour;
+            },
+            LevelFive => {
+                self.level = LevelFive
             }
         }
+    }
+
+    pub fn critical<T>(&mut self, msg: T)
+    where
+        T: Into<String>
+    {
+
+        let mut msg = msg.into();
+
+        let mut formatters: HashMap<String, String> = HashMap::new();
+
+        let date = chrono::Utc::now().date();
+        let date_string = date.to_string().replace("UTC", "");
+
+        let time = chrono::Utc::now()
+            .time()
+            .format("%H:%M:%S")
+            .to_string();
+
+        formatters.insert("%T".to_string(), time);
+        formatters.insert("%D".to_string(), date_string);
+
+        for formatter in &formatters {
+            if msg.find(formatter.0).is_some() {
+                msg = msg.replace(formatter.0, formatter.1);
+            }
+        }
+
+        let formatted = format!("CRITICAL: {}", msg);
+        println!("{}", &formatted.on_red().red());
+
+        let file_formatted = format!("CRITICAL: {}\n",
+            msg
+        );
+
+        write_file(&mut self.file, &file_formatted).expect("Couldn't write to file");
     }
 
     pub fn error<T>(&mut self, msg: T)
     where
         T: Into<String>
     {
-        let msg = msg.into();
+        use LoggingLevel::*;
 
-        let formatted = format!("ERROR: {}: '{}'", file!(), msg);
-        println!("{}", &formatted.bright_red());
+        let mut msg = msg.into();
+
+        let mut formatters: HashMap<String, String> = HashMap::new();
+
+        let date = chrono::Utc::now().date();
+        let date_string = date.to_string().replace("UTC", "");
+
+        let time = chrono::Utc::now()
+            .time()
+            .format("%H:%M:%S")
+            .to_string();
+
+        formatters.insert("%T".to_string(), time);
+        formatters.insert("%D".to_string(), date_string);
+
+        let formatted = format!("ERROR: '{}'", msg);
+        match self.level {
+            LevelOne | LevelTwo |
+            LevelThree | LevelFour => println!("{}", &formatted.bright_red()),
+            _ => {}
+        }
 
         let date = chrono::Utc::now().date();
         let date_string = date.to_string().replace("UTC", "");
@@ -114,10 +179,9 @@ impl Logger {
             .format("%H:%M:%S")
             .to_string();
 
-        let file_formatted = format!("{} {} ERROR: {}: '{}'\n",
+        let file_formatted = format!("{} {} ERROR: '{}'\n",
             date_string,
             time,
-            file!(),
             msg
         );
 
@@ -130,11 +194,24 @@ impl Logger {
     {
         use LoggingLevel::*;
 
-        let msg = msg.into();
+        let mut msg = msg.into();
+
+        let mut formatters: HashMap<String, String> = HashMap::new();
+
+        let date = chrono::Utc::now().date();
+        let date_string = date.to_string().replace("UTC", "");
+
+        let time = chrono::Utc::now()
+            .time()
+            .format("%H:%M:%S")
+            .to_string();
+
+        formatters.insert("%T".to_string(), time);
+        formatters.insert("%D".to_string(), date_string);
 
         let formatted = format!("INFO: {}", msg);
         match self.level {
-            LevelOne => {
+            LevelOne | LevelTwo=> {
                 println!("{}", &formatted.green());
             },
             _ => {}
@@ -162,11 +239,24 @@ impl Logger {
     {
         use LoggingLevel::*;
 
-        let msg = msg.into();
+        let mut msg = msg.into();
 
-        let formatted = format!("WARNING: {}: '{}'", file!(), msg);
+        let mut formatters: HashMap<String, String> = HashMap::new();
+
+        let date = chrono::Utc::now().date();
+        let date_string = date.to_string().replace("UTC", "");
+
+        let time = chrono::Utc::now()
+            .time()
+            .format("%H:%M:%S")
+            .to_string();
+
+        formatters.insert("%T".to_string(), time);
+        formatters.insert("%D".to_string(), date_string);
+
+        let formatted = format!("WARNING: '{}'", msg);
         match self.level {
-            LevelOne | LevelTwo => {
+            LevelOne | LevelTwo | LevelThree => {
                 println!("{}", &formatted.bright_yellow());
             },
             _ => {}
@@ -179,10 +269,9 @@ impl Logger {
             .format("%H:%M:%S")
             .to_string();
 
-        let file_formatted = format!("{} {} WARNING: {}: '{}'\n",
+        let file_formatted = format!("{} {} WARNING: '{}'\n",
             date_string,
             time,
-            file!(),
             msg
         );
 
