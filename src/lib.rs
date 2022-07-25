@@ -4,6 +4,11 @@ use std::io;
 use std::io::Write;
 use chrono;
 use std::collections::HashMap;
+use json;
+
+mod macros;
+
+use macros::*;
 
 /// LoggingLevel enum
 /// 
@@ -37,32 +42,80 @@ pub enum LoggingLevel {
 /// logger.debug("%D %T Date and time according to utc");
 /// ```
 
+#[derive(Debug, Clone)]
+pub struct Config{
+    json: bool,
+    filename: String,
+    json_object: json::JsonValue
+}
+
+impl Config {
+    pub fn new() -> Self {
+        let filename = String::from("logs.log");
+        Self { 
+            json: false, 
+            filename,
+            json_object: json::object! {
+                logs: json_array![
+                    
+                ],
+            }
+        }
+    }
+
+    pub fn filename<T: Into<String>>(&mut self, filename: T) -> Self {
+        self.filename = filename.into();
+        self.update_filename();
+        self.clone()
+    }
+
+    pub fn json(&mut self, json: bool) -> Self {
+        self.json = json;
+        self.update_filename();
+        self.clone()
+    }
+
+    fn update_filename(&mut self) {
+        if self.json {
+            if !self.filename.ends_with(".json") { self.filename += ".json" };
+        }
+    }
+
+    pub fn get_filename(&self) -> &str {
+        &self.filename
+    }
+
+
+}
+
 #[derive(Debug)]
 pub struct Logger {
     file: fs::File,
     level: LoggingLevel,
+    config: Config
 }
 
 impl Default for Logger {
     fn default() -> Self {
-        let filename = String::from("logs.log");
-        let file = open(&filename).unwrap_or_else(|error| {
+        let config = Config::new()
+            .filename("logs")
+            .json(true);
+
+        let file = open(config.get_filename()).unwrap_or_else(|error| {
             println!("{}", format!("Logger Error: {}", error.to_string()).red());
             panic!("");
         });
+
         Self {
             file,
             level: LoggingLevel::LevelOne,
+            config
         }
     }
 }
 
 impl Logger {
-
-    pub fn new<T>(filename: T, level: LoggingLevel) -> Result<Self, String>
-    where
-        T: Into<String>
-    {
+    pub fn new(level: LoggingLevel, config: Config) -> Result<Self, String> {
         use LoggingLevel::*;
         let logging_level: LoggingLevel;
 
@@ -84,11 +137,13 @@ impl Logger {
             }
         }
 
-        let filename = filename.into();
-        let file = open(&filename)?;
+        let config = config;
+        let file = open(config.get_filename())?;
+
         Ok(Self {
             file,
-            level: logging_level
+            level: logging_level,
+            config: config
         })
     }
 
@@ -124,13 +179,7 @@ impl Logger {
 
         let mut formatters: HashMap<String, String> = HashMap::new();
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
+        let (date_string, time) = get_date_time();
 
         formatters.insert("%T".to_string(), String::from(&time));
         formatters.insert("%D".to_string(), String::from(&date_string));
@@ -150,7 +199,24 @@ impl Logger {
             msg
         );
 
-        write_file(&mut self.file, &file_formatted).expect("Couldn't write to file");
+        match self.config.json {
+            true => {
+                
+                let data_to_be_written = json::object! {
+                    date: string!(date_string),
+                    time: string!(time),
+                    message: string!(msg),
+                    type: string!("CRITICAL")
+                };
+
+                self.config.json_object["logs"].push(data_to_be_written)
+                    .expect("Couldn't parse json");
+            },
+            false => {
+                write_file(&mut self.file, &file_formatted)
+                .expect("Couldn't write to file")
+            }
+        }
     }
 
     pub fn error<T>(&mut self, msg: T)
@@ -163,13 +229,7 @@ impl Logger {
 
         let mut formatters: HashMap<String, String> = HashMap::new();
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
+        let (date_string, time) = get_date_time();
 
         formatters.insert("%T".to_string(), String::from(&time));
         formatters.insert("%D".to_string(), String::from(&date_string));
@@ -193,7 +253,24 @@ impl Logger {
             msg
         );
 
-        write_file(&mut self.file, &file_formatted).expect("Couldn't write to file");
+        match self.config.json {
+            true => {
+                
+                let data_to_be_written = json::object! {
+                    date: string!(date_string),
+                    time: string!(time),
+                    message: string!(msg),
+                    type: string!("ERROR")
+                };
+
+                self.config.json_object["logs"].push(data_to_be_written)
+                    .expect("Couldn't parse json");
+            },
+            false => {
+                write_file(&mut self.file, &file_formatted)
+                .expect("Couldn't write to file")
+            }
+        }
     }
 
     pub fn info<T>(&mut self, msg: T)
@@ -206,13 +283,7 @@ impl Logger {
 
         let mut formatters: HashMap<String, String> = HashMap::new();
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
+        let (date_string, time) = get_date_time();
 
         formatters.insert("%T".to_string(), String::from(&time));
         formatters.insert("%D".to_string(), String::from(&date_string));
@@ -238,7 +309,24 @@ impl Logger {
             msg
         );
 
-        write_file(&mut self.file, &file_formatted).expect("Couldn't write to file");
+        match self.config.json {
+            true => {
+                
+                let data_to_be_written = json::object! {
+                    date: string!(date_string),
+                    time: string!(time),
+                    message: string!(msg),
+                    type: string!("INFO")
+                };
+
+                self.config.json_object["logs"].push(data_to_be_written)
+                    .expect("Couldn't parse json");
+            },
+            false => {
+                write_file(&mut self.file, &file_formatted)
+                .expect("Couldn't write to file")
+            }
+        }
     }
 
     pub fn warning<T>(&mut self, msg: T)
@@ -251,12 +339,7 @@ impl Logger {
 
         let mut formatters: HashMap<String, String> = HashMap::new();
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
+        let (date_string, time) = get_date_time(); 
 
         formatters.insert("%T".to_string(), String::from(&time));
         formatters.insert("%D".to_string(), String::from(&date_string));
@@ -281,7 +364,24 @@ impl Logger {
             msg
         );
 
-        write_file(&mut self.file, &file_formatted).expect("Couldn't write to file");
+        match self.config.json {
+            true => {
+                
+                let data_to_be_written = json::object! {
+                    date: string!(date_string),
+                    time: string!(time),
+                    message: string!(msg),
+                    type: string!("WARNING")
+                };
+
+                self.config.json_object["logs"].push(data_to_be_written)
+                    .expect("Couldn't parse json");
+            },
+            false => {
+                write_file(&mut self.file, &file_formatted)
+                .expect("Couldn't write to file")
+            }
+        }
     }
 
     pub fn debug<T>(&mut self, msg: T)
@@ -294,12 +394,7 @@ impl Logger {
 
         let mut formatters: HashMap<String, String> = HashMap::new();
 
-        let date = chrono::Utc::now().date();
-        let date_string = date.to_string().replace("UTC", "");
-        let time = chrono::Utc::now()
-            .time()
-            .format("%H:%M:%S")
-            .to_string();
+        let (date_string, time) = get_date_time();
 
         formatters.insert("%T".to_string(), String::from(&time));
         formatters.insert("%D".to_string(), String::from(&date_string));
@@ -324,8 +419,51 @@ impl Logger {
             msg
         );
 
-        write_file(&mut self.file, &file_formatted).expect("Couldn't write to file");
+        match self.config.json {
+            true => {
+                
+                let data_to_be_written = json::object! {
+                    date: string!(date_string),
+                    time: string!(time),
+                    message: string!(msg),
+                    type: string!("DEBUG")
+                };
+
+                self.config.json_object["logs"].push(data_to_be_written)
+                    .expect("Couldn't parse json");
+            },
+            false => {
+                write_file(&mut self.file, &file_formatted)
+                .expect("Couldn't write to file")
+            }
+        }
     }
+}
+
+impl Drop for Logger {
+    fn drop(&mut self) {
+        match self.config.json {
+            true => {
+                write_file(&mut self.file, self.config.json_object
+                    .to_string()
+                    .trim()
+                    )
+                    .expect("Couldn't write to file");
+            },
+            false => {}
+        }
+    }
+}
+
+fn get_date_time() -> (String, String) {
+    let date = chrono::Utc::now().date();
+    let date_string = date.to_string().replace("UTC", "");
+    let time = chrono::Utc::now()
+        .time()
+        .format("%H:%M:%S")
+        .to_string();
+
+    (date_string, time)
 }
 
 fn write_file<T: Into<String>>(file: &mut fs::File, msg: T) -> Result<(), String> {
@@ -361,4 +499,15 @@ fn open<T: Into<String>>(filename: T) -> Result<fs::File, String> {
             }
         };
     Ok(file)
+}
+
+fn write_json_file<T: Into<String>>(file: &mut fs::File, msg: T) -> Result<(), String> {
+    let msg: String = msg.into();
+
+    match file.write(&mut msg.to_string().as_bytes()) {
+        Ok(i) => i,
+        Err(error) => return Err(error.to_string())
+    };
+
+    Ok(())
 }

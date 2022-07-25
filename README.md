@@ -20,7 +20,7 @@ There are five differrent types of logs.
 use rs_logger::*;
 
 fn main() {
-    let mut logger = Logger::default(); // New Logger object
+    let mut logger = Logger::default(); // New Logger object and Config object is already instantiated
 
     logger.set_level(LoggingLevel::LevelTwo); // LevelTwo ignores debug logs
 
@@ -28,6 +28,21 @@ fn main() {
     logger.debug("Debug"); // ignored
 }
 
+```
+
+or for more control
+
+```
+fn main() {
+    let config = Config::new() // new config
+        .filename("logs.json")
+        .json(true)
+    
+    let mut logger = Logger::new(LoggingLevel::LevelOne, config).unwrap();
+
+    logger.debug("It works");
+    logger.info("Current date and time: %D %T ");
+}
 ```
 
 ### Levels
@@ -41,3 +56,4 @@ fn main() {
 4 => Ignores Debug + Info + Warning
 
 5 => Ignores everything except critical
+

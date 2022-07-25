@@ -1,6 +1,6 @@
 [package]
 name = "rs-logger"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 license-file = "LICENSE"
 description = "A rust logging library."
@@ -15,3 +15,4 @@ license = "MIT"
 colored = "2.0.0"
 time = "0.3.11"
 chrono = "0.4.19"
+json = "0.12.4"
