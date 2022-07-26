@@ -1,25 +1,14 @@
 use colored::*;
-use std::fs;
-use std::io;
-use std::io::Write;
+use std::{
+    io::{self,Write},
+    fs,
+    collections::HashMap
+};
 use chrono;
-use std::collections::HashMap;
 use json;
 
 mod macros;
 
-/// LoggingLevel enum
-/// 
-/// 1 is for logging everything
-/// 
-/// 2 is for everything except debug
-/// 
-/// 3 is for everything except debug + info
-/// 
-/// 4 is for logging nothing except error + critical
-/// 
-/// 5 is for logging nothing except critical
-/// 
 #[derive(Debug)]
 pub enum LoggingLevel {
     LevelOne, // everything
@@ -29,31 +18,29 @@ pub enum LoggingLevel {
     LevelFive, // no error
 }
 
-/// Logger
-/// # Examples
-/// 
+/// Config Struct
+/// Pass into Logger while creating a new logger
 /// ```
-/// let logger = Logger::default().unwrap();
-/// logger.set_level(LoggingLevel::LevelThree);
-/// 
-/// logger.info("It works!");
-/// logger.debug("%D %T Date and time according to utc");
+/// let config = Config::new()
+///     .filename("logs.json")
+///     .json(true)
 /// ```
-
 #[derive(Debug, Clone)]
 pub struct Config{
-    json: bool,
-    filename: String,
-    json_object: json::JsonValue
+    json: bool, // if the output should be json or not
+    filename: String, // filename
+    json_object: json::JsonValue // for writing json to the file
 }
 
 impl Config {
-    pub fn new() -> Self {
-        let filename = String::from("logs.log");
+    
+    // new config
+    pub fn new() -> Self { 
+        let filename = String::from("logs.log"); // default filename
         Self { 
-            json: false, 
+            json: false, // json false by default
             filename,
-            json_object: json::object! {
+            json_object: json::object! { // initialize json object with "logs" array
                 logs: json_array![
                     
                 ],
@@ -61,39 +48,55 @@ impl Config {
         }
     }
 
-    pub fn filename<T: Into<String>>(&mut self, filename: T) -> Self {
+    // change filename
+    pub fn filename<T: Into<String>>(&mut self, filename: T) -> Self { 
         self.filename = filename.into();
         self.update_filename();
         self.clone()
     }
 
-    pub fn json(&mut self, json: bool) -> Self {
+    // change json value
+    pub fn json(&mut self, json: bool) -> Self { 
         self.json = json;
         self.update_filename();
         self.clone()
     }
 
-    fn update_filename(&mut self) {
+    // updates filename
+    fn update_filename(&mut self) { 
         if self.json {
             if !self.filename.ends_with(".json") { self.filename += ".json" };
         }
     }
 
-    pub fn get_filename(&self) -> &str {
+    // returns reference to filename
+    pub fn get_filename(&self) -> &str { 
         &self.filename
     }
 
 
 }
 
+/// Logger
+/// Logger::default() returns default logger
+/// Logger::new() takes in the logging level and config object
+/// 
+/// ```
+/// let config = Config::new()
+///     .filename("Logs.json")
+///     .json(true)
+/// let logger = Logger::new(LoggingLevel::LevelOne, config);
+/// logger.debug("It works");
+/// ```
 #[derive(Debug)]
-pub struct Logger {
-    file: fs::File,
-    level: LoggingLevel,
-    config: Config
+pub struct Logger { 
+    file: fs::File, // the file to be written to
+    level: LoggingLevel, // the logging level
+    config: Config // the config
 }
 
 impl Default for Logger {
+    // default logger with conifg set to filename "logs" and json true 
     fn default() -> Self {
         let config = Config::new()
             .filename("logs")
@@ -113,6 +116,7 @@ impl Default for Logger {
 }
 
 impl Logger {
+    // new logger
     pub fn new(level: LoggingLevel, config: Config) -> Result<Self, String> {
         use LoggingLevel::*;
         let logging_level: LoggingLevel;
@@ -145,6 +149,7 @@ impl Logger {
         })
     }
 
+    // set the level
     pub fn set_level(&mut self, level: LoggingLevel) {
         
         use LoggingLevel::*;
@@ -168,6 +173,8 @@ impl Logger {
         }
     }
 
+    // critical
+    // ignores logging level
     pub fn critical<T>(&mut self, msg: T)
     where
         T: Into<String>
@@ -217,6 +224,9 @@ impl Logger {
         }
     }
 
+    // error
+    // only works till level four 
+    // is ignored by level five
     pub fn error<T>(&mut self, msg: T)
     where
         T: Into<String>
@@ -271,6 +281,9 @@ impl Logger {
         }
     }
 
+    // info
+    // only works till level two
+    // ignored level three and onwards
     pub fn info<T>(&mut self, msg: T)
     where
         T: Into<String>
@@ -327,6 +340,9 @@ impl Logger {
         }
     }
 
+    // warning
+    // only works until level three
+    // ignored by level four onwards
     pub fn warning<T>(&mut self, msg: T)
     where
         T: Into<String>
@@ -382,6 +398,8 @@ impl Logger {
         }
     }
 
+    // debug
+    // only works on level one
     pub fn debug<T>(&mut self, msg: T)
     where
         T: Into<String>
@@ -438,6 +456,7 @@ impl Logger {
     }
 }
 
+// json is written when the Logger goes out of scope and is dropped
 impl Drop for Logger {
     fn drop(&mut self) {
         match self.config.json {
@@ -453,6 +472,7 @@ impl Drop for Logger {
     }
 }
 
+// get currednt UTC date and time 
 fn get_date_time() -> (String, String) {
     let date = chrono::Utc::now().date();
     let date_string = date.to_string().replace("UTC", "");
@@ -464,6 +484,7 @@ fn get_date_time() -> (String, String) {
     (date_string, time)
 }
 
+// write to file
 fn write_file<T: Into<String>>(file: &mut fs::File, msg: T) -> Result<(), String> {
     let msg: String = msg.into();
 
@@ -476,6 +497,7 @@ fn write_file<T: Into<String>>(file: &mut fs::File, msg: T) -> Result<(), String
     Ok(())
 }
 
+// open file
 fn open<T: Into<String>>(filename: T) -> Result<fs::File, String> {
     let filename = filename.into();
     let file = match fs::OpenOptions::new()

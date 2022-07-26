@@ -4,7 +4,7 @@ A Rust logging library.
 
 ## Installation
 
-Add rs-logger = "0.1.5" in you Cargo.toml file under depndencies
+Add rs-logger = "0.1.7" in you Cargo.toml file under depndencies
 
 ## Code Examples
 

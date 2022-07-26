@@ -1,3 +1,6 @@
+
+/// String macro for making a new json string
+/// Doesn't need to be a macro but I still wrote it as one
 #[macro_export]
 macro_rules! string {
     ( $x:expr ) => {{
@@ -6,6 +9,8 @@ macro_rules! string {
     }};
 }
 
+/// Number macro for making a new json numbew
+/// Doesn't need to be a macro but I still wrote it as one
 #[macro_export]
 macro_rules! number {
     ( $x:expr ) => {{
@@ -14,6 +19,8 @@ macro_rules! number {
     }};
 }
 
+/// Bool macro for making a new json bool
+/// Doesn't need to be a macro but I still wrote it as one
 #[macro_export]
 macro_rules! bool {
     ( $x:expr ) => {{
@@ -22,6 +29,7 @@ macro_rules! bool {
     }};
 }
 
+/// Array macro for making a new json array
 #[macro_export]
 macro_rules! json_array {
     ( $( $x:expr ),* ) => {
