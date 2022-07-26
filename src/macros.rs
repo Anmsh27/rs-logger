@@ -26,7 +26,7 @@ macro_rules! bool {
 macro_rules! json_array {
     ( $( $x:expr ),* ) => {
         {
-            let mut json_array = json::JsonValue::Array(json::Array::new());
+            let json_array = json::JsonValue::Array(json::Array::new());
             $(
                 json_array.push($x).unwrap_or_else(|error| {
                     println!("{}", format!("Logger Error: {}", error).red());

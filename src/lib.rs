@@ -8,8 +8,6 @@ use json;
 
 mod macros;
 
-use macros::*;
-
 /// LoggingLevel enum
 /// 
 /// 1 is for logging everything
@@ -501,13 +499,3 @@ fn open<T: Into<String>>(filename: T) -> Result<fs::File, String> {
     Ok(file)
 }
 
-fn write_json_file<T: Into<String>>(file: &mut fs::File, msg: T) -> Result<(), String> {
-    let msg: String = msg.into();
-
-    match file.write(&mut msg.to_string().as_bytes()) {
-        Ok(i) => i,
-        Err(error) => return Err(error.to_string())
-    };
-
-    Ok(())
-}
