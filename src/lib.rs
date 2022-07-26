@@ -9,6 +9,9 @@ use json;
 
 mod macros;
 
+
+/// LoggingLevel enum
+/// pass it into a logger
 #[derive(Debug)]
 pub enum LoggingLevel {
     LevelOne, // everything
