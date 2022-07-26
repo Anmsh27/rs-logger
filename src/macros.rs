@@ -1,5 +1,5 @@
-
 /// String macro for making a new json string
+///
 /// Doesn't need to be a macro but I still wrote it as one
 #[macro_export]
 macro_rules! string {
@@ -10,6 +10,7 @@ macro_rules! string {
 }
 
 /// Number macro for making a new json numbew
+///
 /// Doesn't need to be a macro but I still wrote it as one
 #[macro_export]
 macro_rules! number {
@@ -20,6 +21,7 @@ macro_rules! number {
 }
 
 /// Bool macro for making a new json bool
+///
 /// Doesn't need to be a macro but I still wrote it as one
 #[macro_export]
 macro_rules! bool {
@@ -29,7 +31,7 @@ macro_rules! bool {
     }};
 }
 
-/// Array macro for making a new json array
+///  Array macro for making a new json array
 #[macro_export]
 macro_rules! json_array {
     ( $( $x:expr ),* ) => {
@@ -46,6 +48,6 @@ macro_rules! json_array {
     };
     ( ) => {
         let mut json_array = json::JsonValue::Array(json::Array::new());
-        json_array 
+        json_array
     }
 }
