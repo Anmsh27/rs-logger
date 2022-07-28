@@ -120,27 +120,8 @@ impl Default for Logger {
 
 impl Logger {
     // new logger
-    pub fn new(level: LoggingLevel, config: Config) -> Result<Self, String> {
-        use LoggingLevel::*;
-        let logging_level: LoggingLevel;
-
-        match level {
-            LevelOne => {
-                logging_level = LevelOne;
-            }
-            LevelTwo => {
-                logging_level = LevelTwo;
-            }
-            LevelThree => {
-                logging_level = LevelThree;
-            }
-            LevelFour => {
-                logging_level = LevelFour;
-            }
-            LevelFive => {
-                logging_level = LevelFive;
-            }
-        }
+    pub fn new(level: LoggingLevel, config: Config) -> Result<Self, String> {   
+        let logging_level = level;
 
         let config = config;
         let file = open(config.get_filename())?;
@@ -154,23 +135,7 @@ impl Logger {
 
     // set the level
     pub fn set_level(&mut self, level: LoggingLevel) {
-        use LoggingLevel::*;
-
-        match level {
-            LevelOne => {
-                self.level = LevelOne;
-            }
-            LevelTwo => {
-                self.level = LevelTwo;
-            }
-            LevelThree => {
-                self.level = LevelThree;
-            }
-            LevelFour => {
-                self.level = LevelFour;
-            }
-            LevelFive => self.level = LevelFive,
-        }
+        self.level = level;
     }
 
     // critical
